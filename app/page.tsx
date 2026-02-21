@@ -370,39 +370,6 @@ function HeroSection() {
   );
 }
 
-// ─── Logo strip ───────────────────────────────────────────────────────────────
-
-const CUSTOMERS = [
-  "Republic Services",
-  "Purolator",
-  "City of Seattle",
-  "ABM Industries",
-  "Swift Transportation",
-  "Loblaws",
-];
-
-function LogoStrip() {
-  return (
-    <section className="border-y border-slate-800/60 bg-slate-900/30 py-10">
-      <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <p className="mb-8 text-center text-xs font-semibold uppercase tracking-widest text-slate-500">
-          Trusted by fleet operators across North America
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-          {CUSTOMERS.map((name) => (
-            <span
-              key={name}
-              className="text-sm font-semibold tracking-wide text-slate-600 transition-colors hover:text-slate-400"
-            >
-              {name}
-            </span>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ─── Problem section ──────────────────────────────────────────────────────────
 
 const PROBLEMS = [
@@ -1194,7 +1161,6 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#030712] text-slate-100">
       <Navbar />
       <HeroSection />
-      <LogoStrip />
       <ProblemSection />
       <FeaturesSection />
       <StatsSection />
