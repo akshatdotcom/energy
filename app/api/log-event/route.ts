@@ -1,53 +1,21 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-import { createServerSupabaseClient } from "@/lib/supabase";
-
-const logEventSchema = z
-  .object({
-    eventType: z.string().min(1).max(64),
-    payload: z.record(z.string(), z.unknown()).optional()
-  })
-  .strict();
+import { insertEvent } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
-    const parsed = logEventSchema.safeParse(await request.json());
+    const body = await request.json();
+    const { eventType, payload } = body ?? {};
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Invalid event payload.", details: parsed.error.flatten() },
-        { status: 400 }
-      );
-    }
-
-    const supabase = createServerSupabaseClient();
-    if (!supabase) {
-      return NextResponse.json({ ok: true, logged: false, reason: "Supabase is not configured." });
-    }
-
-    const { error } = await supabase.from("simulation_events").insert({
-      event_type: parsed.data.eventType,
-      payload: parsed.data.payload ?? {},
-      created_at: new Date().toISOString()
+    insertEvent({
+      site_id: "site-oak",
+      event_type: String(eventType ?? "simulation_tick"),
+      severity: "info",
+      message: typeof payload === "object" ? JSON.stringify(payload) : String(payload ?? ""),
+      payload: typeof payload === "object" ? payload : undefined,
     });
 
-    if (error) {
-      return NextResponse.json({
-        ok: true,
-        logged: false,
-        reason: error.message
-      });
-    }
-
     return NextResponse.json({ ok: true, logged: true });
-  } catch (error) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: error instanceof Error ? error.message : "Unknown server error"
-      },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json({ ok: true, logged: false });
   }
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
-
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -9,9 +8,10 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "AeroCharge | EV Load Balancing Demo",
+  title: "AeroCharge | AI EV Fleet Load Management",
   description:
-    "AI-driven EV fleet load balancing simulation to avoid building demand charge penalties."
+    "AeroCharge eliminates EV demand charges with AI-powered load balancing. Real-time allocation across your entire fleet — zero stranded vehicles, maximum savings.",
+  keywords: ["EV fleet", "demand charge management", "load balancing", "EV charging", "fleet electrification"],
 };
 
 export default function RootLayout({
@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${spaceGrotesk.variable} font-sans`}>{children}</body>
+      <body className={`${spaceGrotesk.variable} font-sans bg-[#030712]`}>{children}</body>
     </html>
   );
 }

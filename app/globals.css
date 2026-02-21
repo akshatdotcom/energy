@@ -3,23 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --background: 224 71% 4%;
+  --background: 222 84% 3%;
   --foreground: 213 31% 91%;
-  --card: 222 47% 9%;
+  --card: 222 47% 6%;
   --card-foreground: 210 40% 96%;
-  --primary: 174 84% 43%;
+  --primary: 160 84% 43%;
   --primary-foreground: 222 47% 11%;
-  --secondary: 218 20% 17%;
+  --secondary: 218 20% 14%;
   --secondary-foreground: 210 40% 96%;
-  --muted: 220 16% 22%;
-  --muted-foreground: 215 18% 70%;
-  --accent: 202 89% 45%;
+  --muted: 220 16% 18%;
+  --muted-foreground: 215 18% 60%;
+  --accent: 195 89% 45%;
   --accent-foreground: 210 40% 98%;
   --destructive: 0 75% 56%;
   --destructive-foreground: 210 40% 98%;
-  --border: 219 22% 20%;
-  --input: 219 22% 20%;
-  --ring: 174 84% 43%;
+  --border: 219 22% 15%;
+  --input: 219 22% 15%;
+  --ring: 160 84% 43%;
 }
 
 * {
@@ -32,9 +32,33 @@ body {
 }
 
 body {
-  @apply bg-background text-foreground antialiased;
-  background-image:
-    radial-gradient(circle at 20% 15%, rgba(38, 201, 184, 0.14), transparent 35%),
-    radial-gradient(circle at 75% 5%, rgba(14, 116, 144, 0.3), transparent 30%),
-    radial-gradient(circle at 95% 90%, rgba(6, 78, 59, 0.24), transparent 30%);
+  @apply bg-[#030712] text-foreground antialiased;
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.5);
+}
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color, opacity, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Don't animate transforms by default - let framer-motion handle them */
+* {
+  transition-property: color, background-color, border-color, opacity, box-shadow;
 }

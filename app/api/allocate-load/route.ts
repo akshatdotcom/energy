@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -160,14 +160,14 @@ export async function POST(request: Request) {
 
     const payload = parsed.data;
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
       const fallback = heuristicAllocate(payload);
       return NextResponse.json(fallback);
     }
 
     try {
       const aiResult = await generateObject({
-        model: openai("gpt-4o-mini"),
+        model: google("gemini-2.0-flash"),
         schema: allocationOutputSchema,
         temperature: 0.15,
         system:

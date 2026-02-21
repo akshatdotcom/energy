@@ -6,3 +6,4 @@ dist
 .env.local
 .env
 *.log
+data/aerocharge.db
