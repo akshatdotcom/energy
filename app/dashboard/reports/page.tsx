@@ -11,7 +11,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { AreaChart, BarChart, LineChart } from "@tremor/react";
+import { BarChart, LineChart } from "@tremor/react";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -261,6 +261,7 @@ export default function ReportsPage() {
     "EV Load (kW)": h.ev_load,
     "Demand Limit (kW)": h.demand_limit,
   }));
+  const denseDailyLabels = range !== "7D";
 
   return (
     <div className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
@@ -346,18 +347,24 @@ export default function ReportsPage() {
         </div>
         {barData.length > 0 ? (
           <BarChart
-            className="h-56"
+            className="chart-readable reports-energy-bars h-64"
             data={barData}
             index="date"
             categories={["Energy Delivered (kWh)"]}
             colors={["emerald"]}
             valueFormatter={(n) => `${n.toFixed(0)} kWh`}
-            yAxisWidth={70}
+            yAxisWidth={76}
             showAnimation
+            showGridLines
+            tickGap={denseDailyLabels ? 18 : 10}
+            intervalType={denseDailyLabels ? "preserveStartEnd" : "equidistantPreserveStart"}
+            rotateLabelX={denseDailyLabels ? { angle: -28, verticalShift: 10, xAxisHeight: 62 } : undefined}
+            xAxisLabel="Date"
+            yAxisLabel="Energy Delivered (kWh)"
             showLegend={false}
           />
         ) : (
-          <div className="flex h-56 items-center justify-center text-sm text-slate-500">
+          <div className="flex h-64 items-center justify-center text-sm text-slate-500">
             No data available for this range.
           </div>
         )}
@@ -391,14 +398,20 @@ export default function ReportsPage() {
           </div>
         </div>
         <LineChart
-          className="h-56"
+          className="chart-readable h-64"
           data={lineData}
           index="hour"
           categories={["Building Load (kW)", "EV Load (kW)", "Demand Limit (kW)"]}
           colors={["cyan", "emerald", "rose"]}
           valueFormatter={(n) => `${n} kW`}
-          yAxisWidth={55}
+          yAxisWidth={64}
           showAnimation
+          showGridLines
+          tickGap={16}
+          intervalType="preserveStartEnd"
+          rotateLabelX={{ angle: -30, verticalShift: 10, xAxisHeight: 58 }}
+          xAxisLabel="Hour of day"
+          yAxisLabel="Power (kW)"
           showLegend={false}
           curveType="monotone"
         />

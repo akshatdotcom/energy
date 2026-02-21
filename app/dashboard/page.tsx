@@ -15,7 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LineChart, AreaChart } from "@tremor/react";
+import { LineChart } from "@tremor/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -296,7 +296,7 @@ export default function DashboardPage() {
         "Building Load (kW)": total,
         "Demand Limit (kW)": PENALTY_LIMIT_KW,
         "EV Load (kW)": Math.round(evLoad),
-      }].slice(-40);
+      }].slice(-28);
       return {
         ...prev, tickCount: prev.tickCount + 1, buildingBaseLoadKw: nextBase, chargers: updatedChargers,
         chartData: chart, aiSummary: resp.summary, throttledIds, avoidedPenaltyKw: avoided,
@@ -439,14 +439,21 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <LineChart
-              className="h-56"
+              className="chart-readable h-64"
               data={state.chartData}
               index="time"
               categories={["Building Load (kW)", "Demand Limit (kW)", "EV Load (kW)"]}
               colors={["cyan", "rose", "emerald"]}
               valueFormatter={(n) => `${n.toFixed(0)} kW`}
-              yAxisWidth={55}
+              yAxisWidth={64}
               showAnimation
+              showGridLines
+              intervalType="preserveStartEnd"
+              tickGap={18}
+              rotateLabelX={{ angle: -24, verticalShift: 10, xAxisHeight: 50 }}
+              xAxisLabel="Time"
+              yAxisLabel="Power (kW)"
+              startEndOnly={state.chartData.length > 20}
               showLegend
             />
           </CardContent>

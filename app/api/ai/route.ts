@@ -2,6 +2,7 @@ import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { GEMINI_MODEL } from "@/lib/ai";
 
 const insightSchema = z.object({
   predictions: z.array(
@@ -105,7 +106,7 @@ export async function POST(request: Request) {
 
     try {
       const result = await generateObject({
-        model: google("gemini-2.0-flash"),
+        model: google(GEMINI_MODEL),
         schema: insightSchema,
         temperature: 0.3,
         system:
