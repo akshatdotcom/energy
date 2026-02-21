@@ -261,7 +261,7 @@ function HeroSection() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-              className="text-5xl font-bold leading-[1.08] tracking-tight text-slate-50 md:text-6xl lg:text-7xl"
+              className="text-3xl font-bold leading-[1.08] tracking-tight text-slate-50 sm:text-5xl md:text-6xl lg:text-7xl"
             >
               Stop paying{" "}
               <span className="relative inline-block">
@@ -499,7 +499,7 @@ function ProblemSection() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-emerald-400">
             The problem
           </p>
-          <h2 className="mb-4 text-4xl font-bold tracking-tight text-slate-50 md:text-5xl">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl md:text-5xl">
             The hidden cost of EV fleets
           </h2>
           <p className="text-lg text-slate-400">
@@ -648,7 +648,7 @@ function FeaturesSection() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-emerald-400">
             Platform
           </p>
-          <h2 className="mb-4 text-4xl font-bold tracking-tight text-slate-50 md:text-5xl">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl md:text-5xl">
             Everything you need to run
             <br className="hidden md:block" />
             a smarter fleet
@@ -735,7 +735,7 @@ function StatsSection() {
         <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
           {STATS.map((stat) => (
             <div key={stat.label} className="text-center">
-              <div className="mb-1 text-4xl font-bold tracking-tight text-slate-50 md:text-5xl">
+              <div className="mb-1 text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl md:text-5xl">
                 <Counter
                   target={stat.target}
                   prefix={stat.prefix}
@@ -789,7 +789,7 @@ function HowItWorksSection() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-cyan-400">
             Getting started
           </p>
-          <h2 className="mb-4 text-4xl font-bold tracking-tight text-slate-50 md:text-5xl">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl md:text-5xl">
             Up and running in an afternoon
           </h2>
           <p className="mx-auto max-w-xl text-lg text-slate-400">
@@ -915,7 +915,7 @@ function SolutionsSection() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-violet-400">
             Solutions
           </p>
-          <h2 className="mb-4 text-4xl font-bold tracking-tight text-slate-50 md:text-5xl">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl md:text-5xl">
             Built for every use case
           </h2>
           <p className="mx-auto max-w-xl text-lg text-slate-400">
@@ -924,7 +924,7 @@ function SolutionsSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {SOLUTIONS.map((sol, i) => {
             const Icon = sol.icon;
             return (
@@ -989,7 +989,7 @@ function TestimonialSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.65 }}
-          className="relative rounded-3xl border border-slate-800/70 bg-slate-900/60 p-10 backdrop-blur md:p-14"
+          className="relative rounded-3xl border border-slate-800/70 bg-slate-900/60 p-6 backdrop-blur sm:p-10 md:p-14"
         >
           {/* Background glow */}
           <div
@@ -1009,7 +1009,7 @@ function TestimonialSection() {
             &ldquo;
           </div>
 
-          <blockquote className="relative mb-8 text-xl font-medium leading-relaxed text-slate-100 md:text-2xl md:leading-relaxed">
+          <blockquote className="relative mb-8 text-base font-medium leading-relaxed text-slate-100 sm:text-xl md:text-2xl md:leading-relaxed">
             We were paying $18,000/month in demand charges at our Oakland depot.
             AeroCharge brought it down to{" "}
             <span className="text-emerald-400 font-semibold">
@@ -1069,7 +1069,7 @@ function CtaBanner() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="mb-4 text-4xl font-bold tracking-tight text-slate-50 md:text-5xl">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl md:text-5xl">
             Ready to eliminate demand charges?
           </h2>
           <p className="mb-10 text-lg text-slate-400">

@@ -99,7 +99,7 @@ function formatLastUpdated(date: Date) {
 
 function SkeletonRow() {
   return (
-    <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_0.8fr_1fr_0.8fr] items-center gap-4 px-4 py-3.5 border-b border-slate-800/50">
+    <div className="grid min-w-[900px] grid-cols-[2fr_1fr_1fr_1.5fr_1fr_0.8fr_1fr_0.8fr] items-center gap-4 px-4 py-3.5 border-b border-slate-800/50">
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="h-4 rounded-md bg-slate-800 animate-pulse" style={{ width: i === 3 ? "100%" : `${60 + (i * 17) % 40}%` }} />
       ))}
@@ -135,7 +135,7 @@ function KpiCard({
         <p className="text-xs text-slate-400">{label}</p>
         <span className={cn("rounded-lg border p-1.5", accentMap[accent])}>{icon}</span>
       </div>
-      <p className={cn("text-2xl font-semibold", textColor)}>{value}</p>
+      <p className={cn("text-xl font-semibold md:text-2xl", textColor)}>{value}</p>
       <p className="mt-1 text-xs text-slate-500">{sub}</p>
     </div>
   );
@@ -242,12 +242,12 @@ export default function FleetPage() {
   const ready = vehicles.filter((v) => v.status === "ready").length;
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100">Fleet Management</h1>
-          <p className="text-sm text-slate-500">All vehicles across all sites · Pacific Coast Logistics</p>
+          <h1 className="text-lg font-semibold text-slate-100 md:text-xl">Fleet Management</h1>
+          <p className="text-xs text-slate-500 md:text-sm">All vehicles across all sites · Pacific Coast Logistics</p>
         </div>
         <div className="flex items-center gap-3">
           {lastUpdated && (
@@ -270,13 +270,13 @@ export default function FleetPage() {
       </div>
 
       {/* Site Filter Tabs */}
-      <div className="flex items-center gap-1 rounded-xl border border-slate-800/60 bg-slate-900/40 p-1 w-fit">
+      <div className="flex w-full items-center gap-1 overflow-x-auto rounded-xl border border-slate-800/60 bg-slate-900/40 p-1 sm:w-fit">
         {SITE_TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              "rounded-lg px-4 py-1.5 text-sm font-medium transition-all",
+              "flex-shrink-0 whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-medium transition-all",
               activeTab === tab.key
                 ? "bg-emerald-500/20 text-emerald-300 shadow-sm"
                 : "text-slate-500 hover:text-slate-300"
@@ -321,8 +321,9 @@ export default function FleetPage() {
 
       {/* Vehicle Table */}
       <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 overflow-hidden">
+        <div className="overflow-x-auto">
         {/* Table Header */}
-        <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_0.8fr_1fr_0.8fr] items-center gap-4 border-b border-slate-800/70 bg-slate-900/80 px-4 py-2.5">
+        <div className="grid min-w-[900px] grid-cols-[2fr_1fr_1fr_1.5fr_1fr_0.8fr_1fr_0.8fr] items-center gap-4 border-b border-slate-800/70 bg-slate-900/80 px-4 py-2.5">
           <ColHeader label="Vehicle" sortKey="name" currentSort={sortKey} direction={sortDir} onSort={handleSort} />
           <ColHeader label="Driver" sortKey="driver_name" currentSort={sortKey} direction={sortDir} onSort={handleSort} />
           <ColHeader label="Site" sortKey="site_name" currentSort={sortKey} direction={sortDir} onSort={handleSort} />
@@ -348,7 +349,7 @@ export default function FleetPage() {
               <div
                 key={v.id}
                 className={cn(
-                  "group grid grid-cols-[2fr_1fr_1fr_1.5fr_1fr_0.8fr_1fr_0.8fr] items-center gap-4 px-4 py-3.5 transition-all cursor-default",
+                  "group grid min-w-[900px] grid-cols-[2fr_1fr_1fr_1.5fr_1fr_0.8fr_1fr_0.8fr] items-center gap-4 px-4 py-3.5 transition-all cursor-default",
                   idx < sorted.length - 1 && "border-b border-slate-800/50",
                   "hover:bg-slate-800/40"
                 )}
@@ -455,6 +456,8 @@ export default function FleetPage() {
             );
           })
         )}
+
+        </div>{/* end overflow-x-auto */}
 
         {/* Table Footer */}
         {!loading && sorted.length > 0 && (

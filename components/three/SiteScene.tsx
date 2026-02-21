@@ -477,12 +477,12 @@ function VehicleBox({ charger, vehicleName }: VehicleBoxProps) {
         {vehicleName}
       </Text>
 
-      {/* Cable to charger */}
+      {/* Cable to charger (local coords relative to vehicle group) */}
       <EnergyCable
-        chargerX={x}
-        chargerZ={z}
-        vehicleX={x}
-        vehicleZ={vz}
+        chargerX={0}
+        chargerZ={z - vz}
+        vehicleX={0}
+        vehicleZ={0}
         status={status}
       />
     </group>

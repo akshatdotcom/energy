@@ -8,6 +8,7 @@ import {
   ChevronUp,
   Clock,
   Info,
+  RefreshCw,
   Search,
   Sparkles,
   TrendingDown,
@@ -15,9 +16,10 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AreaChart } from "@tremor/react";
 import { cn } from "@/lib/utils";
+import type { AiInsightsResponse } from "@/app/api/ai/route";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -197,16 +199,56 @@ function AnomalyCard({ event }: { event: AnomalyEvent }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
+type AiInsightsState = {
+  data: AiInsightsResponse | null;
+  source: "gemini" | "heuristic" | null;
+  loading: boolean;
+  error: string | null;
+};
+
 export default function AIInsightsPage() {
   const [filter, setFilter] = useState<FilterOption>("All");
   const [savingsData] = useState<SavingsPoint[]>(SAVINGS_DATA);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [aiState, setAiState] = useState<AiInsightsState>({ data: null, source: null, loading: true, error: null });
 
-  // Auto-refresh every 30s
-  useEffect(() => {
-    const id = setInterval(() => setLastRefresh(new Date()), 30_000);
-    return () => clearInterval(id);
+  const fetchAiInsights = useCallback(async () => {
+    setAiState((s) => ({ ...s, loading: true, error: null }));
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          siteLoadKw: 420,
+          evLoadKw: 168,
+          demandLimitKw: 500,
+          activeChargers: 4,
+          throttledChargers: 2,
+          totalChargers: 6,
+          avoidedPenaltyKw: 312,
+          estimatedSavingsUsd: 5148,
+          peakLoadToday: 491,
+          recentEvents: ANOMALY_EVENTS.slice(0, 3).map((e) => ({
+            title: e.title,
+            severity: e.severity,
+            timestamp: e.timestamp,
+          })),
+        }),
+      });
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const json = await res.json();
+      setAiState({ data: json, source: json.source ?? "heuristic", loading: false, error: json.aiError ?? null });
+      setLastRefresh(new Date());
+    } catch (err) {
+      setAiState((s) => ({ ...s, loading: false, error: err instanceof Error ? err.message : "Failed to fetch AI insights" }));
+    }
   }, []);
+
+  useEffect(() => {
+    fetchAiInsights();
+    const id = setInterval(fetchAiInsights, 60_000);
+    return () => clearInterval(id);
+  }, [fetchAiInsights]);
 
   const filteredEvents = ANOMALY_EVENTS.filter((e) => {
     if (filter === "All") return true;
@@ -216,40 +258,40 @@ export default function AIInsightsPage() {
     return true;
   });
 
-  const predictionCards = [
-    {
+  const typeConfig = {
+    success: {
       icon: <CheckCircle2 className="h-5 w-5 text-emerald-400" />,
-      title: "All vehicles ready by 7:15 AM",
-      sub: "94% confidence — 6/6 on track",
-      badge: "94% confidence",
       badgeColor: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
       glow: "border-emerald-500/20 bg-emerald-500/5",
     },
-    {
-      icon: <TrendingDown className="h-5 w-5 text-cyan-400" />,
-      title: "Peak demand window: 2–4 PM",
-      sub: "AI recommends shifting 180 kWh to overnight",
-      badge: "Action recommended",
-      badgeColor: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30",
-      glow: "border-cyan-500/20 bg-cyan-500/5",
-    },
-    {
-      icon: <Zap className="h-5 w-5 text-emerald-400" />,
-      title: "CH04 Truck #A07: 91% SoC at departure",
-      sub: "On track — 9:00 AM departure window",
-      badge: "On track",
-      badgeColor: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-      glow: "border-slate-800/80 bg-slate-900/60",
-    },
-    {
+    warning: {
       icon: <AlertTriangle className="h-5 w-5 text-amber-400" />,
-      title: "CH02 Van #A02: degraded cable",
-      sub: "78% charge efficiency — inspection needed",
-      badge: "78% efficiency",
       badgeColor: "bg-amber-500/15 text-amber-300 border-amber-500/30",
       glow: "border-amber-500/20 bg-amber-500/5",
     },
-  ];
+    info: {
+      icon: <Info className="h-5 w-5 text-cyan-400" />,
+      badgeColor: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30",
+      glow: "border-cyan-500/20 bg-cyan-500/5",
+    },
+    action: {
+      icon: <TrendingDown className="h-5 w-5 text-violet-400" />,
+      badgeColor: "bg-violet-500/15 text-violet-300 border-violet-500/30",
+      glow: "border-violet-500/20 bg-violet-500/5",
+    },
+  };
+
+  const predictionCards = aiState.data?.predictions.map((p) => {
+    const cfg = typeConfig[p.type] ?? typeConfig.info;
+    return {
+      icon: cfg.icon,
+      title: p.title,
+      sub: p.detail,
+      badge: `${p.confidence}% confidence`,
+      badgeColor: cfg.badgeColor,
+      glow: cfg.glow,
+    };
+  }) ?? [];
 
   const perfMetrics = [
     { label: "Throttle events this month", value: "127", sub: "avg 4.2/day", color: "text-cyan-300" },
@@ -261,18 +303,18 @@ export default function AIInsightsPage() {
   const filterOptions: FilterOption[] = ["All", "Critical", "Warning", "Info"];
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
       {/* ── A. Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-xl font-semibold text-slate-100">AI Insights</h1>
+          <div className="flex flex-wrap items-center gap-2 mb-1 sm:gap-3">
+            <h1 className="text-lg font-semibold text-slate-100 md:text-xl">AI Insights</h1>
             <span className="flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-xs font-medium text-violet-300">
               <Sparkles className="h-3 w-3" />
               Powered by Gemini
             </span>
           </div>
-          <p className="text-sm text-slate-500">Real-time predictions, anomaly detection &amp; load optimization reasoning</p>
+          <p className="text-xs text-slate-500 md:text-sm">Real-time predictions, anomaly detection &amp; load optimization reasoning</p>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <span className="relative flex h-2 w-2">
@@ -283,27 +325,92 @@ export default function AIInsightsPage() {
         </div>
       </div>
 
-      {/* ── B. Prediction Cards ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {predictionCards.map((card, i) => (
-          <div
-            key={i}
-            className={cn("rounded-xl border p-4 transition-all", card.glow)}
-          >
-            <div className="mb-3 flex items-start justify-between gap-2">
-              <div className="flex-shrink-0">{card.icon}</div>
-              <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-medium", card.badgeColor)}>
-                {card.badge}
+      {/* ── B. AI-Powered Prediction Cards ──────────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Brain className="h-4 w-4 text-violet-400" />
+            <h2 className="text-sm font-medium text-slate-200">Live Predictions</h2>
+            {aiState.source && (
+              <span className={cn(
+                "rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                aiState.source === "gemini"
+                  ? "border-violet-500/30 bg-violet-500/10 text-violet-300"
+                  : "border-slate-600/40 bg-slate-700/40 text-slate-400"
+              )}>
+                {aiState.source === "gemini" ? "Gemini AI" : "Heuristic Fallback"}
               </span>
-            </div>
-            <p className="text-sm font-medium text-slate-100 leading-snug mb-1">{card.title}</p>
-            <p className="text-xs text-slate-400">{card.sub}</p>
+            )}
           </div>
-        ))}
+          <button
+            onClick={fetchAiInsights}
+            disabled={aiState.loading}
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-400 transition-all hover:border-slate-600 hover:text-slate-200",
+              aiState.loading && "opacity-60 cursor-not-allowed"
+            )}
+          >
+            <RefreshCw className={cn("h-3 w-3", aiState.loading && "animate-spin")} />
+            Refresh Insights
+          </button>
+        </div>
+
+        {aiState.loading && predictionCards.length === 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="animate-pulse rounded-xl border border-slate-800/60 bg-slate-900/60 p-4 space-y-3">
+                <div className="flex justify-between">
+                  <div className="h-5 w-5 rounded bg-slate-800" />
+                  <div className="h-4 w-20 rounded-full bg-slate-800" />
+                </div>
+                <div className="h-4 w-3/4 rounded bg-slate-800" />
+                <div className="h-3 w-full rounded bg-slate-800" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {predictionCards.map((card, i) => (
+              <div
+                key={i}
+                className={cn("rounded-xl border p-4 transition-all", card.glow)}
+              >
+                <div className="mb-3 flex items-start justify-between gap-2">
+                  <div className="flex-shrink-0">{card.icon}</div>
+                  <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-medium", card.badgeColor)}>
+                    {card.badge}
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-slate-100 leading-snug mb-1">{card.title}</p>
+                <p className="text-xs text-slate-400">{card.sub}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {aiState.error && (
+          <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+            <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+            {aiState.error}
+          </div>
+        )}
+
+        {aiState.data && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-violet-400 mb-2">AI Recommendation</p>
+              <p className="text-xs text-slate-300 leading-relaxed">{aiState.data.recommendation}</p>
+            </div>
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-400 mb-2">Savings Insight</p>
+              <p className="text-xs text-slate-300 leading-relaxed">{aiState.data.savingsInsight}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── C. Anomaly Detection Timeline ─────────────────────────────────── */}
-      <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5">
+      <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4 md:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Brain className="h-4 w-4 text-violet-400" />
@@ -342,9 +449,9 @@ export default function AIInsightsPage() {
       {/* ── D. Throttle Explainer ──────────────────────────────────────────── */}
       <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 overflow-hidden">
         {/* Header bar */}
-        <div className="flex items-center justify-between border-b border-slate-800/60 bg-slate-900/80 px-5 py-4">
+        <div className="flex flex-col gap-3 border-b border-slate-800/60 bg-slate-900/80 px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 border border-amber-500/30">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/15 border border-amber-500/30">
               <Search className="h-4 w-4 text-amber-400" />
             </div>
             <div>
@@ -432,8 +539,8 @@ export default function AIInsightsPage() {
       </div>
 
       {/* ── E. Monthly Savings Trajectory ─────────────────────────────────── */}
-      <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4 md:p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-emerald-400" />
             <h2 className="text-sm font-medium text-slate-200">Monthly Savings Trajectory</h2>
@@ -480,7 +587,7 @@ export default function AIInsightsPage() {
           {perfMetrics.map((m) => (
             <div key={m.label} className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4">
               <p className="text-xs text-slate-500 mb-3 leading-snug">{m.label}</p>
-              <p className={cn("text-2xl font-semibold", m.color)}>{m.value}</p>
+              <p className={cn("text-xl font-semibold md:text-2xl", m.color)}>{m.value}</p>
               <p className="text-xs text-slate-500 mt-1">{m.sub}</p>
             </div>
           ))}

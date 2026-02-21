@@ -126,7 +126,7 @@ function KpiCard({
         <p className="text-xs text-slate-400">{label}</p>
         <span className={cn("rounded-lg border p-1.5", c)}>{icon}</span>
       </div>
-      <p className={cn("text-2xl font-semibold", c.split(" ")[0])}>{value}</p>
+      <p className={cn("text-xl font-semibold md:text-2xl", c.split(" ")[0])}>{value}</p>
       <p className={cn("mt-1 text-xs", highlight ? "text-emerald-400" : "text-slate-500")}>{sub}</p>
     </div>
   );
@@ -188,6 +188,68 @@ export default function ReportsPage() {
   const totalSavings = daily.reduce((s, d) => s + d.savings_usd, 0);
   const co2Avoided = (totalEnergy * 0.5) / 1000; // tonnes
 
+  function exportCsv() {
+    const rows: string[][] = [];
+
+    rows.push(["AeroCharge Energy Report"]);
+    rows.push([`Date Range: Last ${days} days`]);
+    rows.push([`Generated: ${new Date().toLocaleString()}`]);
+    rows.push([]);
+
+    rows.push(["Summary Metrics"]);
+    rows.push(["Metric", "Value"]);
+    rows.push(["Total Energy Delivered (kWh)", totalEnergy.toFixed(1)]);
+    rows.push(["Demand Charges Avoided ($)", totalSavings.toFixed(2)]);
+    rows.push(["Demand Charges Paid ($)", "0"]);
+    rows.push(["CO2 Equivalent Avoided (tonnes)", co2Avoided.toFixed(1)]);
+    if (stats) {
+      rows.push(["Total Sessions", String(stats.total_sessions)]);
+      rows.push(["Total Energy (kWh)", stats.total_energy_kwh.toFixed(1)]);
+      rows.push(["Total Demand Avoided ($)", stats.total_demand_avoided_usd.toFixed(2)]);
+      rows.push(["Avg Peak Rate (kW)", (stats.avg_peak_kw ?? 0).toFixed(1)]);
+    }
+    rows.push([]);
+
+    rows.push(["Daily Energy & Savings"]);
+    rows.push(["Date", "Energy (kWh)", "Savings ($)", "Sessions"]);
+    for (const d of daily) {
+      rows.push([d.date, d.energy_kwh.toFixed(1), d.savings_usd.toFixed(2), String(d.sessions)]);
+    }
+    rows.push([]);
+
+    if (hourlyProfile.length > 0) {
+      rows.push(["24-Hour Demand Profile"]);
+      rows.push(["Hour", "Building Load (kW)", "EV Load (kW)", "Total (kW)", "Demand Limit (kW)"]);
+      for (const h of hourlyProfile) {
+        rows.push([h.hour, String(h.base_load), String(h.ev_load), String(h.total), String(h.demand_limit)]);
+      }
+      rows.push([]);
+    }
+
+    rows.push(["Site Comparison"]);
+    rows.push(["Site", "Sessions", "Energy (kWh)", "Savings ($)", "Uptime"]);
+    for (const site of SITES) {
+      rows.push([site.name, site.sessions, site.energy, site.savings, site.uptime]);
+    }
+
+    const csvContent = rows
+      .map((row) => row.map((cell) => {
+        const escaped = String(cell).replace(/"/g, '""');
+        return /[,"\n\r]/.test(escaped) ? `"${escaped}"` : escaped;
+      }).join(","))
+      .join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `aerocharge-report-${range.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   const barData: BarChartPoint[] = daily.map((d) => ({
     date: formatDate(d.date),
     "Energy Delivered (kWh)": d.energy_kwh,
@@ -201,12 +263,12 @@ export default function ReportsPage() {
   }));
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
       {/* ── A. Header ──────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100">Reports &amp; Analytics</h1>
-          <p className="text-sm text-slate-500">Oakland Distribution Center · All sites aggregated below</p>
+          <h1 className="text-lg font-semibold text-slate-100 md:text-xl">Reports &amp; Analytics</h1>
+          <p className="text-xs text-slate-500 md:text-sm">Oakland Distribution Center · All sites aggregated below</p>
         </div>
         <div className="flex items-center gap-3">
           {/* Time range selector */}
@@ -266,8 +328,8 @@ export default function ReportsPage() {
       </div>
 
       {/* ── C. Energy Delivery Bar Chart ──────────────────────────────────── */}
-      <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-5">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-4 md:p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-emerald-400" />
             <h2 className="text-sm font-medium text-slate-200">Daily Energy Delivered (kWh)</h2>
@@ -458,7 +520,10 @@ export default function ReportsPage() {
             </label>
 
             {/* Export button */}
-            <button className="flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 hover:bg-emerald-500/20 transition-all">
+            <button
+              onClick={exportCsv}
+              className="flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 hover:bg-emerald-500/20 transition-all"
+            >
               <Download className="h-4 w-4" />
               Export Report
             </button>

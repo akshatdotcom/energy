@@ -6,7 +6,9 @@ import {
   ArrowUp,
   Brain,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
+  MapPin,
   TrendingDown,
   TrendingUp,
   Timer,
@@ -100,7 +102,7 @@ function clamp(v: number, min: number, max: number) {
 const HEURISTIC_SUMMARIES = [
   (throttled: number, budget: number) => `Allocated ${Math.round(budget)} kW budget across fleet — ${throttled} charger${throttled !== 1 ? "s" : ""} throttled to protect demand limit.`,
   (throttled: number, budget: number) => `Departure-aware scheduling active. ${throttled > 0 ? `${throttled} sessions rate-limited` : "All sessions at full rate"} within ${Math.round(budget)} kW envelope.`,
-  (_: number, budget: number) => `Load balancing cycle complete. Site headroom: ${Math.round(500 - budget - 332 + budget)} kW. Demand charge exposure: $0.`,
+  (_: number, budget: number) => `Load balancing cycle complete. Site headroom: ${Math.round(budget)} kW. Demand charge exposure: $0.`,
   (throttled: number) => throttled > 2 ? `High building load detected. Throttling ${throttled} EVs to prevent $${Math.floor(Math.random() * 800 + 600)}/kW demand overrun.` : `Fleet charging on schedule. All departure commitments on track.`,
   (throttled: number, budget: number) => `Budget ${Math.round(budget)} kW distributed by urgency score. ${throttled > 0 ? `Early departures protected; ${throttled} deferred.` : "All vehicles receiving optimal charge rates."}`,
   () => `Demand guard active at 500 kW threshold. AI load shaping keeping utility penalty zone clear.`,
@@ -181,6 +183,18 @@ const initialState: SimulationState = {
   peakLoadToday: 332 + initialEvLoad,
 };
 
+type SiteOption = {
+  id: string;
+  name: string;
+  address: string;
+};
+
+const SITES: SiteOption[] = [
+  { id: "site-oak", name: "Oakland Distribution Center", address: "2450 Maritime Dr" },
+  { id: "site-sj", name: "San Jose Fleet Hub", address: "1850 Airport Blvd" },
+  { id: "site-frem", name: "Fremont Logistics Terminal", address: "39120 Argonaut Way" },
+];
+
 function statusVariant(s: ChargerStatus): "default" | "secondary" | "destructive" {
   if (s === "Throttled by AI") return "destructive";
   if (s === "Ready") return "secondary";
@@ -192,8 +206,21 @@ export default function DashboardPage() {
   const [state, setState] = useState<SimulationState>(initialState);
   const [isTicking, setIsTicking] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<SiteOption>(SITES[0]);
+  const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
   const stateRef = useRef<SimulationState>(initialState);
   const lockRef = useRef(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setSiteDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (!document.cookie.includes(`${DEMO_SESSION_COOKIE}=1`)) {
@@ -303,12 +330,58 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-100">Oakland Distribution Center</h1>
-          <p className="text-sm text-slate-500">2450 Maritime Dr · Live AI Load Management</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div ref={dropdownRef} className="relative">
+            <button
+              onClick={() => setSiteDropdownOpen((v) => !v)}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg border px-3.5 py-2 text-left transition-all",
+                siteDropdownOpen
+                  ? "border-emerald-500/40 bg-slate-800/80 ring-1 ring-emerald-500/20"
+                  : "border-slate-700/60 bg-slate-800/50 hover:border-slate-600/80 hover:bg-slate-800/70"
+              )}
+            >
+              <MapPin className="h-4 w-4 flex-shrink-0 text-emerald-400" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-100 truncate">{selectedSite.name}</p>
+                <p className="text-[11px] text-slate-500 truncate">{selectedSite.address}</p>
+              </div>
+              <ChevronDown className={cn("h-3.5 w-3.5 flex-shrink-0 text-slate-500 transition-transform", siteDropdownOpen && "rotate-180")} />
+            </button>
+            {siteDropdownOpen && (
+              <div className="absolute left-0 top-full z-50 mt-1.5 w-72 overflow-hidden rounded-xl border border-slate-700/60 bg-slate-900 shadow-xl shadow-black/40">
+                <div className="px-3 py-2 border-b border-slate-800/60">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Switch Site</p>
+                </div>
+                {SITES.map((site) => (
+                  <button
+                    key={site.id}
+                    onClick={() => { setSelectedSite(site); setSiteDropdownOpen(false); }}
+                    className={cn(
+                      "flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors",
+                      selectedSite.id === site.id
+                        ? "bg-emerald-500/10 text-emerald-300"
+                        : "text-slate-300 hover:bg-slate-800/60"
+                    )}
+                  >
+                    <MapPin className={cn("h-3.5 w-3.5 flex-shrink-0", selectedSite.id === site.id ? "text-emerald-400" : "text-slate-500")} />
+                    <div className="min-w-0 flex-1">
+                      <p className={cn("text-sm font-medium truncate", selectedSite.id === site.id ? "text-emerald-200" : "text-slate-200")}>{site.name}</p>
+                      <p className="text-[11px] text-slate-500 truncate">{site.address}</p>
+                    </div>
+                    {selectedSite.id === site.id && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <span className="hidden sm:inline-block text-sm text-slate-600">·</span>
+          <p className="hidden sm:block text-sm text-slate-500">Live AI Load Management</p>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <span className={cn("h-1.5 w-1.5 rounded-full", isTicking ? "bg-amber-400 animate-pulse" : "bg-emerald-500")} />
@@ -353,9 +426,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts row */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Main demand chart */}
-        <Card className="col-span-2 border-slate-800/80 bg-slate-900/60">
+        <Card className="lg:col-span-2 border-slate-800/80 bg-slate-900/60">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium text-slate-300">Site Power Load — Live</CardTitle>
@@ -481,7 +554,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {[
           { href: "/dashboard/site", label: "3D Site View", desc: "Interactive depot visualization", color: "from-violet-500/10 to-violet-600/5 border-violet-500/20 text-violet-300" },
           { href: "/dashboard/ai", label: "AI Insights", desc: "Predictions & anomaly detection", color: "from-cyan-500/10 to-cyan-600/5 border-cyan-500/20 text-cyan-300" },
@@ -523,7 +596,7 @@ function KpiCard({ label, value, sub, subColor, icon, accent }: {
         <p className="text-xs text-slate-400">{label}</p>
         <span className={cn("rounded-lg border p-1.5", colors[accent])}>{icon}</span>
       </div>
-      <p className={cn("text-2xl font-semibold", colors[accent].split(" ")[0])}>{value}</p>
+      <p className={cn("text-xl font-semibold md:text-2xl", colors[accent].split(" ")[0])}>{value}</p>
       <p className={cn("mt-1 text-xs", subColor)}>{sub}</p>
     </div>
   );

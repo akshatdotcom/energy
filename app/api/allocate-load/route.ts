@@ -3,24 +3,20 @@ import { generateObject } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-const chargerInputSchema = z
-  .object({
-    chargerId: z.string().min(1),
-    vehicleId: z.string().min(1),
-    minutesUntilDeparture: z.number().int().min(0),
-    requiredEnergyKwh: z.number().min(0),
-    deliveredEnergyKwh: z.number().min(0),
-    maxChargeRateKw: z.number().positive()
-  })
-  .strict();
+const chargerInputSchema = z.object({
+  chargerId: z.string().min(1),
+  vehicleId: z.string().min(1),
+  minutesUntilDeparture: z.number().min(0),
+  requiredEnergyKwh: z.number().min(0),
+  deliveredEnergyKwh: z.number().min(0),
+  maxChargeRateKw: z.number().positive()
+});
 
-const allocationRequestSchema = z
-  .object({
-    buildingBaseLoadKw: z.number().min(0),
-    penaltyLimitKw: z.number().positive(),
-    chargers: z.array(chargerInputSchema).min(1).max(16)
-  })
-  .strict();
+const allocationRequestSchema = z.object({
+  buildingBaseLoadKw: z.number().min(0),
+  penaltyLimitKw: z.number().positive(),
+  chargers: z.array(chargerInputSchema).min(1).max(16)
+});
 
 const allocationOutputSchema = z
   .object({

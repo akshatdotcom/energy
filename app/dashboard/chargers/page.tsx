@@ -430,12 +430,12 @@ export default function ChargersPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100">Chargers &amp; Sites</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-lg font-semibold text-slate-100 md:text-xl">Chargers &amp; Sites</h1>
+          <p className="text-xs text-slate-500 md:text-sm">
             {chargers.length} chargers across 3 sites · Pacific Coast Logistics
           </p>
         </div>
@@ -469,7 +469,7 @@ export default function ChargersPage() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {sites.map((site) => (
               <SiteSummaryCard
                 key={site.id}
@@ -482,9 +482,9 @@ export default function ChargersPage() {
       </div>
 
       {/* Status Filter + Charger Count */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1 rounded-xl border border-slate-800/60 bg-slate-900/40 p-1">
-          <Filter className="ml-2 h-3 w-3 text-slate-600" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-slate-800/60 bg-slate-900/40 p-1">
+          <Filter className="ml-2 h-3 w-3 flex-shrink-0 text-slate-600" />
           {STATUS_FILTERS.map(({ key, label }) => {
             const count = counts[key];
             const hasFault = key === "faulted" && count > 0;
@@ -493,7 +493,7 @@ export default function ChargersPage() {
                 key={key}
                 onClick={() => setStatusFilter(key)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
+                  "flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
                   statusFilter === key
                     ? key === "faulted"
                       ? "bg-rose-500/20 text-rose-300"
